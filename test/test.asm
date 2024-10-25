@@ -11,13 +11,10 @@
     txs    
     clv
 
-    ldx     #3
-loop:
-    lbra $3000
-
-nextbit:    
-    dex
-    bne     loop
+    bsr     routine
 
 halt:
     bra     halt
+
+routine:
+    rts    

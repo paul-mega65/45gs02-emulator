@@ -96,7 +96,8 @@
 "brk"		7 	00 																
 		brkCode()
 
-// **** TODO **** BSR
+"bsr @O"	3 	(AR:63)
+		@EAC;pc--;Push(pc >> 8);Push(pc & 0xFF);pc = eac;
 
 "bvc @O"	2 	(ZR:50,AR:53)															
 		@EAC;Branch(overflowFlag == 0)
@@ -166,7 +167,8 @@
 //
 // *******************************************************************************************
 
-// **** TODO **** EOM
+"eom"		1 	EA
+		{}
 
 "eor @O"	4 	(I:49,BP:45,BX:55,A:4D,AX:5D,AY:59,IX:41,IY:51,IZ:52)					
 		@EAC;sValue = zValue = a = a ^ Read(eac)
@@ -353,10 +355,10 @@
 "sta @O"	4 	(BP:85,BX:95,A:8D,AX:9D,AY:99,IX:81,IY:91,IZ:92,SP:82) 						
 		@EAC;Write(eac,a)
 
-"stx @O"	4 	(BP:86,BY:96,A:8E) 												
+"stx @O"	4 	(BP:86,BY:96,A:8E,AY:9B) 												
 		@EAC;Write(eac,x)
 
-"sty @O"	4 	(BP:84,BX:94,A:8C)												
+"sty @O"	4 	(BP:84,BX:94,A:8C,AX:8B)												
 		@EAC;Write(eac,y)				
 
 "stz @O"	4 	(BP:64,BX:74,A:9C,AX:9E) 												

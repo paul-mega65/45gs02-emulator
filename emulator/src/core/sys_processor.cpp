@@ -81,6 +81,11 @@ static inline void _Write(WORD16 address,BYTE8 data) {
 	ramMemory[address] = data;	
 }
 
+static void WriteWord(WORD16 address,WORD16 data) {
+	_Write(address,data & 0xFF);
+	_Write(address+1,data >> 8);
+}
+
 static void CPUMapMemory(void) {
 }
 
@@ -114,8 +119,7 @@ void CPUReset(void) {
 			*p++ = '\0';
 			if (strcmp(szBuffer,"pc") == 0) {
 				sscanf(p,"%x",&runAddress);
-				Write(0xFFFC,runAddress & 0xFF);
-				Write(0xFFFD,runAddress >> 8);
+				WriteWord(0xFFFC,runAddress);
 			} else {
 				if (*p == '$') p++; 
 				if (sscanf(p,"%x",&loadAddress) != 1) exit(fprintf(stderr,"Bad argument %s\n",argumentList[i]));
