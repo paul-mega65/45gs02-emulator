@@ -1,34 +1,19 @@
 
-SOURCES = $(wildcard *.mxl */*.mxl */*/*.mxl */*/*/*.mxl)
-OBJECTS = $(subst mxl,mscz,$(SOURCES))
-MSCORE = mscore
+include ../build_env/common.make
 
-all: compile
+all: assemble 
 
 .any:
 
 	
-compile: $(OBJECTS) replicate
+assemble: .any
+	$(ACME) --cpu m65 -l test.sym -r test.rep test.asm
 
-%.mscz : %.mxl
-	$(MSCORE) -f $< -o build/temp2.xml
-	python3 scripts/process.py build/temp2.xml build/temp.xml
-	$(MSCORE) -f build/temp.xml -o $@
+run: assemble
+	$(XEMU) -prg test.prg
 
-generate: .any
-	python3 scripts/generate.py
+reset: .any
+	$(M65) -F
 
-replicate: .any
-	cp -Rvn music/* website/site || true
-	rm -f website/site/alltunes.zip
-	zip -r -j website/site/alltunes.zip music
-	zip -d website/site/alltunes.zip *.mxl
-
-website: .any generate 
-	cd website ; mkdocs -q build
-
-server: .any website
-	cd website ; mkdocs -q serve
-
-upload: .any website replicate
-	sh upload.sh
+hrun: assemble
+	$(M65) -r test.prg

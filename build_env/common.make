@@ -7,6 +7,9 @@ CDELQ =
 CMAKEDIR = mkdir -p 
 CMAKE = make
 TOUCH = touch
+XEMU = /aux/builds/xemu/build/bin/xmega65.native -fastboot
+ACME = acme
+M65 = /aux/builds/mega65-tools/bin/m65
 #
 #		Directories
 #
