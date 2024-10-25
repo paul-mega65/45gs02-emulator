@@ -13,7 +13,7 @@ include ../../build_env/common.make
 
 all:
 	$(PYTHON) process.py
-	cp *.h ../6502
+	cp *.h ../4502
 
 	
 

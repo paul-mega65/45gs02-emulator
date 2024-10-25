@@ -18,7 +18,7 @@
 #include "debugger.h"
 #include "hardware.h"
 
-#include "6502/__6502mnemonics.h"
+#include "4502/__4502mnemonics.h"
 
 #include "__font5x7.h"
 
@@ -27,21 +27,12 @@
 #define DBGC_HIGHLIGHT 	(0xFF0)
 
 static int renderCount = 0;
-static BYTE8 videoRAM[320*240];														// VRAM simple pattern.
-
-// *******************************************************************************************************************************
-//												Access display VRAM
-// *******************************************************************************************************************************
-
-BYTE8 *DBGXGetVideoRAM(void) {
-	return videoRAM;
-}
 
 // *******************************************************************************************************************************
 //											This renders the debug screen
 // *******************************************************************************************************************************
 
-static const char *labels[] = { "A","X","Y","PC","SP","SR","CY","N","V","B","D","I","Z","C", NULL };
+static const char *labels[] = { "A","X","Y","Z","PC","SP","N","V","B","D","I","Z","C", NULL };
 
 void DBGXRender(int *address,int showDisplay) {
 	int n = 0;
@@ -53,7 +44,7 @@ void DBGXRender(int *address,int showDisplay) {
 
 	#define DN(v,w) GFXNumber(GRID(24,n++),v,16,w,GRIDSIZE,DBGC_DATA,-1)			// Helper macro
 
-	DN(s->a,2);DN(s->x,2);DN(s->y,2);DN(s->pc,4);DN(s->sp+0x100,4);DN(s->status,2);DN(s->cycles,4);
+	DN(s->a,2);DN(s->x,2);DN(s->y,2);DN(s->z,2);DN(s->pc,4);DN(s->sp+0x100,4);
 	DN(s->sign,1);DN(s->overflow,1);DN(s->brk,1);DN(s->decimal,1);DN(s->interruptDisable,1);DN(s->zero,1);DN(s->carry,1);
 
 	n = 0;

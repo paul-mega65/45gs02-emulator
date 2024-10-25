@@ -29,7 +29,7 @@
 //														CPU / Memory
 // *******************************************************************************************************************************
 
-static BYTE8 a,x,y,s;																// 6502 A,X,Y and Stack registers
+static BYTE8 a,x,y,z,s;																// 4502 A,X,Y,Z and Stack registers
 static BYTE8 carryFlag,interruptDisableFlag,breakFlag,								// Values representing status reg
 			 decimalFlag,overflowFlag,sValue,zValue;
 static WORD16 pc;																	// Program Counter.
@@ -54,7 +54,7 @@ static WORD16 lowVideoAddress,highVideoAddress;  									// Write to video rang
 static inline BYTE8 _Read(WORD16 address);											// Need to be forward defined as 
 static inline void _Write(WORD16 address,BYTE8 data);								// used in support functions.
 
-#include "6502/__6502support.h"
+#include "4502/__4502support.h"
 
 // *******************************************************************************************************************************
 //											   Read and Write Inline Functions
@@ -131,7 +131,7 @@ BYTE8 CPUExecuteInstruction(void) {
 	}
 	BYTE8 opcode = Fetch();															// Fetch opcode.
 	switch(opcode) {																// Execute it.
-		#include "6502/__6502opcodes.h"
+		#include "4502/__4502opcodes.h"
 	}
 	int cycleMax = inFastMode ? CYCLES_PER_FRAME*10:CYCLES_PER_FRAME; 		
 	if (cycles < cycleMax) return 0;												// Not completed a frame.
@@ -198,7 +198,7 @@ void CPUExit(void) {
 static CPUSTATUS st;																	// Status area
 
 CPUSTATUS *CPUGetStatus(void) {
-	st.a = a;st.x = x;st.y = y;st.sp = s;st.pc = pc;
+	st.a = a;st.x = x;st.y = y;st.z = z;st.sp = s;st.pc = pc;
 	st.carry = carryFlag;st.interruptDisable = interruptDisableFlag;st.zero = (zValue == 0);
 	st.decimal = decimalFlag;st.brk = breakFlag;st.overflow = overflowFlag;
 	st.sign = (sValue & 0x80) != 0;st.status = constructFlagRegister();

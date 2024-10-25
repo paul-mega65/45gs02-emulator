@@ -2,7 +2,7 @@
 # *******************************************************************************************
 #
 #		Name : 		process.py
-#		Purpose :	Generate 6502 emulation code.
+#		Purpose :	Generate 4502 emulation code.
 #		Date :		25th October 2024
 #		Author : 	Paul Robson (paul@robsons.org.uk)
 #
@@ -60,16 +60,16 @@ def defineOpcode(opcode,mnemonic,code,cycles):
 	#print("{1:02x} {0} {2}".format(mnemonics[opcode],opcode,codeList[opcode]))
 
 #
-#		Open the 6502 definition file, read and pre-process it.
+#		Open the 4502 definition file, read and pre-process it.
 #
-src = open("6502.def").readlines()
+src = open("4502.def").readlines()
 src = [x if x.find("//") < 0 else x[:x.find("//")] for x in src]
 src = [x.strip().replace("\t"," ").replace("\n"," ") for x in src if x.strip() != ""]
 
 #
 #		Output all lines beginning with ':' to the support file.
 #
-open("__6502support.h","w").write("\n".join([x[1:] for x in src if x[0] == ':']))
+open("__4502support.h","w").write("\n".join([x[1:] for x in src if x[0] == ':']))
 
 #
 #		Remove all those lines. Put | before lines beginning with "
@@ -133,15 +133,15 @@ for i in range(0,256):
 #		Write out the mnemonic table.
 #
 m = ['"'+m.lower()+'"' for m in mnemonics]
-open("__6502mnemonics.h","w").write("static const char *_mnemonics[] = { "+",".join(m) + "};")
+open("__4502mnemonics.h","w").write("static const char *_mnemonics[] = { "+",".join(m) + "};")
 
 #
 #		Write out instruction code.
 #
-handle = open("__6502opcodes.h","w")
+handle = open("__4502opcodes.h","w")
 for i in range(0,256):
 	if codeList[i] is not None:
 		handle.write("case 0x{0:02x}: /* ${0:02x} {1} */\n".format(i,mnemonics[i]))
 		handle.write("\t{0};break;\n".format(codeList[i]).replace(";;",";"))
 
-print("Successfully generated 65C02 opcodes.")
+print("Successfully generated 45GS02 opcodes.")
