@@ -11,15 +11,13 @@
     txs    
     clv
 
-    lda #$20
-    sta $1C3
-    lda #$14
-    sta $1C2
-    ldz #$14
-    ldy #1
-    lda ($02,sp),y
-    asr 
-    lda #$84
-    asr 
+    ldx     #3
+loop:
+    lbra $3000
+
+nextbit:    
+    dex
+    bne     loop
+
 halt:
     bra     halt

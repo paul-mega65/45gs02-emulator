@@ -1,7 +1,3 @@
-- Add PHW (Check XEMU)
-- Check PHP/PLP E behaviour.
-- Check branches work
-- Add extended branches
 - Add BSR
 - Add DEW and INW
 - Add EOM (probably not required)

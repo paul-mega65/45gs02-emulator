@@ -87,6 +87,11 @@ void DBGXRender(int *address,int showDisplay) {
 				if ((addr & 0x80) != 0) addr = addr-256;
 				sprintf(hex,"%04x",addr+p);
 			}
+			if (at[1] == 's') {
+				int addr = CPUReadMemory(p)+CPUReadMemory(p+1)*256;
+				p = (p+2) & 0xFFFF;
+				sprintf(hex,"%04x",(addr+p-1) & 0xFFFF);
+			}
 			strcpy(temp,buffer);
 			strcpy(temp+(at-buffer),hex);
 			strcat(temp,at+2);

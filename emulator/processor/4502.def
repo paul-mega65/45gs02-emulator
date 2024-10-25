@@ -58,22 +58,22 @@
 //
 // *******************************************************************************************
 
-// **** TODO **** FAR BRANCHES
+:#define Branch(c) if (c) pc = eac;
 
-"bbr% @O"	6	(ZR:0F)
+"bbr% @O"	6	(BR:0F)
 		@EAC;Branch((Read(eac) & (1 << %)) == 0)
 
-"bbs% @O" 	6	(ZR:8F)
+"bbs% @O" 	6	(BR:8F)
 		@EAC;Branch((Read(eac) & (1 << %)) != 0)
 
-"bcc @R"	2 	90																
-		Branch(carryFlag == 0)
+"bcc @O"	2   (ZR:90,AR:93)
+		@EAC;Branch(carryFlag == 0)
 
-"bcs @R"	2 	B0																
-		Branch(carryFlag != 0)
+"bcs @O"	2 	(ZR:B0,AR:B3)													
+		@EAC;Branch(carryFlag != 0)
 
-"beq @R"	2 	F0 																
-		Branch(zValue == 0)
+"beq @O"	2 	(ZR:F0,AR:F3)													
+		@EAC;Branch(zValue == 0)
 
 "bit @O"	3 	(A:2C,BP:24,AX:3C,BX:34) 													
 		@EAC; bitCode(Read(eac))
@@ -81,28 +81,28 @@
 "bit #@1"	3	89
 		bitCode(Fetch())
 
-"bmi @R"	2 	30 																
-		Branch((sValue & 0x80) != 0)
+"bmi @O"	2 	(ZR:30,AR:33)
+		@EAC;Branch((sValue & 0x80) != 0)
 
-"bne @R"	2 	D0 																
-		Branch(zValue != 0)
+"bne @O"	2 	(ZR:D0,AR:D3)
+		@EAC;Branch(zValue != 0)
 
-"bpl @R"	2 	10 																
-		Branch((sValue & 0x80) == 0)
+"bpl @O"	2 	(ZR:10,AR:13)
+		@EAC;Branch((sValue & 0x80) == 0)
   
-"bra @R"	2 	80 																
-		Branch(1)
+"bra @O"	2 	(ZR:80,AR:83)
+		@EAC;Branch(1)
 
 "brk"		7 	00 																
 		brkCode()
 
 // **** TODO **** BSR
 
-"bvc @R"	2 	50 																
-		Branch(overflowFlag == 0)
+"bvc @O"	2 	(ZR:50,AR:53)															
+		@EAC;Branch(overflowFlag == 0)
 
-"bvs @R"	2 	70 																
-		Branch(overflowFlag != 0)
+"bvs @O"	2 	(ZR:70,AR:73)
+		@EAC;Branch(overflowFlag != 0)
 
 // *******************************************************************************************
 //
@@ -269,7 +269,8 @@
 "php"		3 	08 																
 		Push(constructFlagRegister())
 
-// **** TODO **** PHW
+"phw @O"		5 	(IW:F4,A:FC)
+		@EAC;temp16 = ReadWord(eac);Push(temp16 >> 8);;Push(temp16 & 0xFF);
 
 "phx"		3 	DA
 		Push(x)
@@ -508,23 +509,6 @@
 :	n = sValue = zValue = (n >> 1) | (carryFlag << 7);
 :	carryFlag = newCarry;
 :	return n;
-:}
-
-// *******************************************************************************************
-//
-//										  Branch support
-//
-// *******************************************************************************************
-
-:static void Branch(BYTE8 test) { 
-:	temp8 = Fetch();
-:	if (test) { 
-:		if (temp8 & 0x80) { 
-:			pc = (pc+temp8-256) & 0xFFFF; 
-:		} else { 
-:			pc = (pc+temp8) & 0xFFFF; 
-:		} 
-:	} 
 :}
 
 // *******************************************************************************************

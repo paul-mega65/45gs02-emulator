@@ -29,9 +29,10 @@ modes["bp"] = { "eac":"eac = Fetch();", "cycles":-1, "desc":"@1" }
 modes["bx"] = { "eac":"eac = (Fetch()+basePage);", "cycles":0, "desc":"@1,X" }
 modes["by"] = { "eac":"eac = (Fetch()+basePage);", "cycles":0, "desc":"@1,Y" }
 #
-#		Immediate mode.
+#		Immediate modes.
 #
 modes["i"] = { "eac":"", "cycles":-2, "desc":"#@1" }
+modes["iw"] = { "eac":"eac = pc;pc += 2", "cycles":-2, "desc":"#@2" }
 #
 #		Indirect mode.
 #
@@ -42,9 +43,11 @@ modes["iz"] = { "eac":"temp8 = Fetch();eac = (ReadWord(temp8)+z) & 0xFFFF;", "cy
 modes["sp"] = { "eac":"temp8 = Fetch();eac = (ReadWord(temp8+stackBaseAddress+s)+y) & 0xFFFF;", "cycles":2, "desc":"(@1,SP),Y" }
 modes["iax"] = { "eac":"FetchWord();temp16 = (temp16+x) & 0xFFFF;eac = ReadWord(temp16)","cycles":2,"desc":"(@2,x)"}
 #
-#		BBS/BBR mode.
+#		BBranch modes.
 #
-modes["zr"] = { "eac":"eac = Fetch();", "cycles":-1, "desc":"@1,@R" }
+modes["br"] = { "eac":"eac = Fetch();if (eac & 0x80) eac |= 0xFF00;eac = (pc+eac) & 0xFFFF;", "cycles":-1, "desc":"@1,@R" }
+modes["zr"] = { "eac":"eac = Fetch();if (eac & 0x80) eac |= 0xFF00;eac = (pc+eac) & 0xFFFF;", "cycles":-1, "desc":"@R" }
+modes["ar"] = { "eac":"FetchWord();eac = (temp16 + pc - 1) & 0xFFFF;", "cycles":-1, "desc":"@S" }
 #
 #		Contains the mnemonics and the code for each instruction.
 #
