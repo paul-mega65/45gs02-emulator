@@ -1,0 +1,9 @@
+*.pyc
+*.tmp
+*.mscz
+*.zip
+__pycache__/*
+__pycache__
+build/*
+website/site/*
+mscore
