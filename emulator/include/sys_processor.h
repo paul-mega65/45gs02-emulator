@@ -33,7 +33,7 @@ void CPUInterruptMaskable(void);
 typedef struct __CPUSTATUS {
 	int a,x,y,z,sp,pc;
 	int carry,zero,sign,interruptDisable,decimal,brk,overflow,status;
-	int cycles;		
+	int baseAddress,cycles;		
 } CPUSTATUS;
 
 CPUSTATUS *CPUGetStatus(void);

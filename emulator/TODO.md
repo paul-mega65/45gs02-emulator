@@ -1,0 +1,11 @@
+- Add ability to assemble and run code for testing purposes.
+- Check ASR, NEG, IZ and SP actually work properly.
+- Add PHW (Check XEMU)
+- Check PHP/PLP E behaviour.
+- Check branches work
+- Add extended branches
+- Add BSR
+- Add DEW and INW
+- Add EOM (probably not required)
+- Add ASW and ROW
+- Check they are all in.

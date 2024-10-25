@@ -22,69 +22,400 @@
 :static WORD16 eac,temp16;
 
 // *******************************************************************************************
-//									Memory Read/Write
+// *******************************************************************************************
+//
+//								4502 Non-Extended Opcodes
+//
 // *******************************************************************************************
 
-"lda @O"	4 	(I:A9,Z:A5,ZX:B5,A:AD,AX:BD,AY:B9,IX:A1,IY:B1,IZ:B2) 					
-		@EAC;a = sValue = zValue = Read(eac)
-
-"ldx @O"	4 	(I:A2,Z:A6,ZY:B6,A:AE,AY:BE) 									
-		@EAC;x = sValue = zValue = Read(eac)
-
-"ldy @O"	4 	(I:A0,Z:A4,ZX:B4,A:AC,AX:BC) 									
-		@EAC;y = sValue = zValue = Read(eac)
-
-"sta @O"	4 	(Z:85,ZX:95,A:8D,AX:9D,AY:99,IX:81,IY:91,IZ:92) 						
-		@EAC;Write(eac,a)
-
-"stx @O"	4 	(Z:86,ZY:96,A:8E) 												
-		@EAC;Write(eac,x)
-
-"sty @O"	4 	(Z:84,ZX:94,A:8C)												
-		@EAC;Write(eac,y)				
-
-"stz @O"	4 	(Z:64,ZX:74,A:9C,AX:9E) 												
-		@EAC;Write(eac,0)
-
 // *******************************************************************************************
-//								Arithmetic and Bit operations
+//
+//										Axx operations
+//
 // *******************************************************************************************
 
-"adc @O"	4	(A:6D,I:69,Z:65,IX:61,IY:71,ZX:75,AX:7D,AY:79,IZ:72)					
+"adc @O"	4	(A:6D,I:69,BP:65,IX:61,IY:71,BX:75,AX:7D,AY:79,IZ:72)					
 		@EAC;sValue = zValue = a = add8Bit(a,Read(eac),decimalFlag)
 
-"and @O" 	4 	(A:2D,I:29,Z:25,IX:21,IY:31,ZX:35,AX:3D,AY:39,IZ:32)					
+"and @O" 	4 	(A:2D,I:29,BP:25,IX:21,IY:31,BX:35,AX:3D,AY:39,IZ:32)					
 		@EAC; a = a & Read(eac) ; sValue = zValue = a
 
-"bit @O"	3 	(A:2C,Z:24,AX:3C,ZX:34) 													
+"asl @O"	6 	(A:0E,BP:06,BX:16,AX:1E)											
+		@EAC; Write(eac,aslCode(Read(eac)))
+
+"asl a"		2 	0A																
+		a = aslCode(a)
+
+"asr @O"	6 	(BP:44,BX:54)											
+		@EAC; Write(eac,asrCode(Read(eac)))
+
+"asr a"		2 	43
+		a = asrCode(a)
+
+// *******************************************************************************************
+//
+//										Bxx operations
+//
+// *******************************************************************************************
+
+// **** TODO **** FAR BRANCHES
+
+"bbr% @O"	6	(ZR:0F)
+		@EAC;Branch((Read(eac) & (1 << %)) == 0)
+
+"bbs% @O" 	6	(ZR:8F)
+		@EAC;Branch((Read(eac) & (1 << %)) != 0)
+
+"bcc @R"	2 	90																
+		Branch(carryFlag == 0)
+
+"bcs @R"	2 	B0																
+		Branch(carryFlag != 0)
+
+"beq @R"	2 	F0 																
+		Branch(zValue == 0)
+
+"bit @O"	3 	(A:2C,BP:24,AX:3C,BX:34) 													
 		@EAC; bitCode(Read(eac))
 
 "bit #@1"	3	89
 		bitCode(Fetch())
 
-"cmp @O"	4	(I:C9,A:CD,Z:C5,IX:C1,IY:D1,ZX:D5,AX:DD,AY:D9,IZ:D2)					
+"bmi @R"	2 	30 																
+		Branch((sValue & 0x80) != 0)
+
+"bne @R"	2 	D0 																
+		Branch(zValue != 0)
+
+"bpl @R"	2 	10 																
+		Branch((sValue & 0x80) == 0)
+  
+"bra @R"	2 	80 																
+		Branch(1)
+
+"brk"		7 	00 																
+		brkCode()
+
+// **** TODO **** BSR
+
+"bvc @R"	2 	50 																
+		Branch(overflowFlag == 0)
+
+"bvs @R"	2 	70 																
+		Branch(overflowFlag != 0)
+
+// *******************************************************************************************
+//
+//										Cxx operations
+//
+// *******************************************************************************************
+
+"clc"		2 	18 																
+		carryFlag = 0
+
+"cld"		2 	D8 																
+		decimalFlag = 0
+
+"cle"	 	2 	02
+		extendedStackDisableFlag = 0
+
+"cli"		2 	58 																
+		interruptDisableFlag = 0
+
+"clv"		2 	B8																
+		overflowFlag = 0
+
+"cmp @O"	4	(I:C9,A:CD,BP:C5,IX:C1,IY:D1,BX:D5,AX:DD,AY:D9,IZ:D2)					
 		@EAC;carryFlag = 1;sValue = zValue = sub8Bit(a,Read(eac),0)
 
-"cpx @O"	4 	(A:EC,Z:E4,I:E0)												
+"cpx @O"	4 	(A:EC,BP:E4,I:E0)												
 		@EAC;carryFlag = 1;sValue = zValue = sub8Bit(x,Read(eac),0)
 
-"cpy @O"	4 	(I:C0,Z:C4,A:CC)												
+"cpy @O"	4 	(I:C0,BP:C4,A:CC)												
 		@EAC;carryFlag = 1;sValue = zValue = sub8Bit(y,Read(eac),0)
 
-"eor @O"	4 	(I:49,Z:45,ZX:55,A:4D,AX:5D,AY:59,IX:41,IY:51,IZ:52)					
+"cpz @O"	4 	(I:C2,BP:D4,A:DC)												
+		@EAC;carryFlag = 1;sValue = zValue = sub8Bit(z,Read(eac),0)
+
+// *******************************************************************************************
+//
+//										Dxx operations
+//
+// *******************************************************************************************
+
+"dec @O"	6 	(BP:C6,BX:D6,A:CE,AX:DE)											
+		@EAC;sValue = zValue = (Read(eac)-1) & 0xFF; Write(eac,sValue)
+
+"dec"		2 	3A 																
+		sValue = zValue = a = (a - 1) & 0xFF
+
+// **** TODO **** DEW
+
+"dex"		2 	CA 																
+		sValue = zValue = x = (x - 1) & 0xFF
+
+"dey"		2 	88 																
+		sValue = zValue = y = (y - 1) & 0xFF
+
+"dez"		2 	3B 																
+		sValue = zValue = z = (z - 1) & 0xFF
+
+// *******************************************************************************************
+//
+//										Exx operations
+//
+// *******************************************************************************************
+
+// **** TODO **** EOM
+
+"eor @O"	4 	(I:49,BP:45,BX:55,A:4D,AX:5D,AY:59,IX:41,IY:51,IZ:52)					
 		@EAC;sValue = zValue = a = a ^ Read(eac)
 
-"ora @O"	4 	(I:09,Z:05,ZX:15,A:0D,AX:1D,AY:19,IX:01,IY:11,IZ:12)					
+// *******************************************************************************************
+//
+//										Ixx operations
+//
+// *******************************************************************************************
+
+"inc @O"	6 	(BP:E6,BX:F6,A:EE,AX:FE)											
+		@EAC;sValue = zValue = (Read(eac)+1) & 0xFF; Write(eac, sValue)
+
+"inc"		2 	1A																
+		sValue = zValue = a = (a + 1) & 0xFF
+
+// **** TODO **** INW
+
+"inx"		2 	E8																
+		sValue = zValue = x = (x + 1) & 0xFF
+
+"iny"		2 	C8 																
+		sValue = zValue = y = (y + 1) & 0xFF
+
+"inz"		2 	1B 																
+		sValue = zValue = z = (z + 1) & 0xFF
+
+// *******************************************************************************************
+//
+//										Jxx operations
+//
+// *******************************************************************************************
+
+"jmp @O" 	3 	(A:4C,ID:6C,IAX:7C) 													
+		@EAC;pc = eac
+
+"jsr @O"	6 	(A:20,ID:22,IAX:23) 															
+		@EAC;pc--;Push(pc >> 8);Push(pc & 0xFF);pc = eac;
+
+// *******************************************************************************************
+//
+//										Lxx operations
+//
+// *******************************************************************************************
+
+"lda @O"	4 	(I:A9,BP:A5,BX:B5,A:AD,AX:BD,AY:B9,IX:A1,IY:B1,IZ:B2,SP:E2) 					
+		@EAC;a = sValue = zValue = Read(eac)
+
+"ldx @O"	4 	(I:A2,BP:A6,BY:B6,A:AE,AY:BE) 									
+		@EAC;x = sValue = zValue = Read(eac)
+
+"ldy @O"	4 	(I:A0,BP:A4,BX:B4,A:AC,AX:BC) 									
+		@EAC;y = sValue = zValue = Read(eac)
+
+"ldz @O"	4 	(I:A3,A:AB,AX:BB) 									
+		@EAC;z = sValue = zValue = Read(eac)
+
+"lsr @O"	4 	(BP:46,BX:56,A:4E,AX:5E) 										
+		@EAC; Write(eac,lsrCode(Read(eac)))
+
+"lsr a"		2 	4A																
+		a = lsrCode(a)
+
+// *******************************************************************************************
+//
+//										Mxx operations
+//
+// *******************************************************************************************
+
+"map"	1 	5C
+		CPUMapMemory()
+
+// *******************************************************************************************
+//
+//										Nxx operations
+//
+// *******************************************************************************************
+
+"neg" 	1 	42
+		a = sValue = zValue = ((a ^ 0xFF)+1) & 0xFF
+
+// *******************************************************************************************
+//
+//										Oxx operations
+//
+// *******************************************************************************************
+
+"ora @O"	4 	(I:09,BP:05,BX:15,A:0D,AX:1D,AY:19,IX:01,IY:11,IZ:12)					
 		@EAC;sValue = zValue = a = a | Read(eac)
 
-"sbc @O"	4	(I:E9,Z:E5,ZX:F5,A:ED,AX:FD,AY:F9,IX:E1,IY:F1,IZ:F2) 					
+// *******************************************************************************************
+//
+//										Lxx operations
+//
+// *******************************************************************************************
+
+"pha"		3 	48																
+		Push(a)
+
+"php"		3 	08 																
+		Push(constructFlagRegister())
+
+// **** TODO **** PHW
+
+"phx"		3 	DA
+		Push(x)
+
+"phy"		3 	5A
+		Push(y)
+
+"phz"		3 	DB
+		Push(z)
+
+"pla"		4 	68 																
+		a = sValue = zValue = Pop()
+
+"plp"		4 	28 																
+		explodeFlagRegister(Pop())
+
+"plx"		4 	FA 																
+		x = sValue = zValue = Pop()
+
+"ply"		4 	7A 																
+		y = sValue = zValue = Pop()
+
+"plz"		4 	FB 																
+		z = sValue = zValue = Pop()
+
+// *******************************************************************************************
+//
+//										Rxx operations
+//
+// *******************************************************************************************
+
+"rmb% @O" 	4 	(BP:07)
+		@EAC;temp8 = Read(eac)&((1 << %)^0xFF);Write(eac,temp8)
+
+"rol @O"	4 	(BP:26,BX:36,A:2E,AX:3E)											
+		@EAC; Write(eac,rolCode(Read(eac)))
+
+"rol A"		2 	2A																
+		a = rolCode(a)
+
+"ror @O"	4 	(BP:66,BX:76,A:6E,AX:7E) 									
+		@EAC; Write(eac,rorCode(Read(eac)))
+
+"ror a"		2 	6A																
+		a = rorCode(a)
+
+// **** TODO **** ROW
+
+"rti" 		6 	40 																
+		explodeFlagRegister(Pop());pc = Pop();pc = pc | (((WORD16)Pop()) << 8)
+
+"rts" 		6 	60 																
+		pc = Pop();pc = pc | (((WORD16)Pop()) << 8);pc++
+
+// *******************************************************************************************
+//
+//										Sxx operations
+//
+// *******************************************************************************************
+
+
+"sbc @O"	4	(I:E9,BP:E5,BX:F5,A:ED,AX:FD,AY:F9,IX:E1,IY:F1,IZ:F2) 					
 		@EAC;sValue = zValue = a = sub8Bit(a,Read(eac),decimalFlag)
 
-"tsb @O" 	4	(A:0C,Z:04)
+"sec"		2 	38 																
+		carryFlag = 1	
+
+"sed"		2 	F8 																
+		decimalFlag = 1
+
+"see"	 	2 	03
+		extendedStackDisableFlag = 1
+
+"sei"		2 	78 																
+		interruptDisableFlag = 1
+
+"smb% @O" 	4 	(BP:87)
+		@EAC;temp8 = Read(eac)|(1 << %);Write(eac,temp8)
+
+"sta @O"	4 	(BP:85,BX:95,A:8D,AX:9D,AY:99,IX:81,IY:91,IZ:92,SP:82) 						
+		@EAC;Write(eac,a)
+
+"stx @O"	4 	(BP:86,BY:96,A:8E) 												
+		@EAC;Write(eac,x)
+
+"sty @O"	4 	(BP:84,BX:94,A:8C)												
+		@EAC;Write(eac,y)				
+
+"stz @O"	4 	(BP:64,BX:74,A:9C,AX:9E) 												
+		@EAC;Write(eac,0)
+
+// *******************************************************************************************
+//
+//										Txx operations
+//
+// *******************************************************************************************
+
+"tab"		2 	5B
+		basePage = a << 8
+
+"tax"		2 	AA																
+		sValue = zValue = x = a
+
+"tay"		2 	A8 																
+		sValue = zValue = y = a
+
+"taz"		2 	4B
+		sValue = zValue = z = a
+
+"tba"		2 	7B
+		a = basePage >> 8
+
+"trb @O" 	4	(A:1C,BP:14)
+		@EAC; trsbCode(eac,0)
+
+"tsb @O" 	4	(A:0C,BP:04)
 		@EAC; trsbCode(eac,1)
 
-"trb @O" 	4	(A:1C,Z:14)
-		@EAC; trsbCode(eac,0)
+"tsx" 		2 	BA 																
+		sValue = zValue = x = s
+
+"tsy" 		2 	0B
+		sValue = zValue = y = stackBaseAddress >> 8
+
+"txa"		2 	8A 																
+		sValue = zValue = a = x
+
+"txs"		2 	9A 																
+		s = x
+
+"tya"		2 	98 																
+		sValue = zValue = a = y
+
+"tys" 		2 	2B
+		if (extendedStackDisableFlag == 0) {
+			stackBaseAddress = y << 8;
+		}
+
+"tza"		2 	6B
+		sValue = zValue = a = z
+
+// *******************************************************************************************
+//
+//									Bit manipulation support
+//
+// *******************************************************************************************
 
 :static void bitCode(BYTE8 n) {
 :	zValue = (n & a);
@@ -98,6 +429,12 @@
 :	n = set ? (n | a) : (n & (a^0xFF));
 :	Write(eac,n);
 :}
+
+// *******************************************************************************************
+//
+//										Arithmetic support
+//
+// *******************************************************************************************
 
 :static BYTE8 add8Bit(BYTE8 n1,BYTE8 n2,BYTE8 isDecimalMode) {
 :	WORD16 result;
@@ -136,66 +473,20 @@
 :}
 
 // *******************************************************************************************
-//						     Operations on bytes or register
+//
+//									Shift and rotate support
+//
 // *******************************************************************************************
-
-"asl @O"	6 	(A:0E,Z:06,ZX:16,AX:1E)											
-		@EAC; Write(eac,aslCode(Read(eac)))
-
-"asl a"		2 	0A																
-		a = aslCode(a)
-
-"dec @O"	6 	(Z:C6,ZX:D6,A:CE,AX:DE)											
-		@EAC;sValue = zValue = (Read(eac)-1) & 0xFF; Write(eac,sValue)
-
-"dec"		2 	3A 																
-		sValue = zValue = a = (a - 1) & 0xFF
-
-"dex"		2 	CA 																
-		sValue = zValue = x = (x - 1) & 0xFF
-
-"dey"		2 	88 																
-		sValue = zValue = y = (y - 1) & 0xFF
-
-"inc @O"	6 	(Z:E6,ZX:F6,A:EE,AX:FE)											
-		@EAC;sValue = zValue = (Read(eac)+1) & 0xFF; Write(eac, sValue)
-
-"inc"		2 	1A																
-		sValue = zValue = a = (a + 1) & 0xFF
-
-"inx"		2 	E8																
-		sValue = zValue = x = (x + 1) & 0xFF
-
-"iny"		2 	C8 																
-		sValue = zValue = y = (y + 1) & 0xFF
-
-"lsr @O"	4 	(Z:46,ZX:56,A:4E,AX:5E) 										
-		@EAC; Write(eac,lsrCode(Read(eac)))
-
-"lsr a"		2 	4A																
-		a = lsrCode(a)
-
-"rol @O"	4 	(Z:26,ZX:36,A:2E,AX:3E)											
-		@EAC; Write(eac,rolCode(Read(eac)))
-
-"rol A"		2 	2A																
-		a = rolCode(a)
-
-"ror @O"	4 	(Z:66,ZX:76,A:6E,AX:7E) 									
-		@EAC; Write(eac,rorCode(Read(eac)))
-
-"ror a"		2 	6A																
-		a = rorCode(a)
-
-"rmb% @O" 	4 	(Z:07)
-		@EAC;temp8 = Read(eac)&((1 << %)^0xFF);Write(eac,temp8)
-
-"smb% @O" 	4 	(Z:87)
-		@EAC;temp8 = Read(eac)|(1 << %);Write(eac,temp8)
 
 :static BYTE8 aslCode(BYTE8 n) {
 :	carryFlag = (n >> 7);
 :	n = sValue = zValue = (n << 1) & 0xFF;
+:	return n;
+:}
+
+:static BYTE8 asrCode(BYTE8 n) {
+:	carryFlag = (n >> 7);
+:	n = sValue = zValue = (n >> 1) | (n & 0x80);
 :	return n;
 :}
 
@@ -219,9 +510,10 @@
 :	return n;
 :}
 
-
 // *******************************************************************************************
-//									Branch instructions
+//
+//										  Branch support
+//
 // *******************************************************************************************
 
 :static void Branch(BYTE8 test) { 
@@ -235,148 +527,21 @@
 :	} 
 :}
 
-"bcc @R"	2 	90																
-		Branch(carryFlag == 0)
-
-"bcs @R"	2 	B0																
-		Branch(carryFlag != 0)
-
-"beq @R"	2 	F0 																
-		Branch(zValue == 0)
-
-"bmi @R"	2 	30 																
-		Branch((sValue & 0x80) != 0)
-
-"bne @R"	2 	D0 																
-		Branch(zValue != 0)
-
-"bpl @R"	2 	10 																
-		Branch((sValue & 0x80) == 0)
-  
-"bra @R"	2 	80 																
-		Branch(1)
-
-"bvc @R"	2 	50 																
-		Branch(overflowFlag == 0)
-
-"bvs @R"	2 	70 																
-		Branch(overflowFlag != 0)
-
-"jmp @O" 	3 	(A:4C,ID:6C,IAX:7C) 													
-		@EAC;pc = eac
-
-"jsr @O"	6 	(A:20) 															
-		@EAC;pc--;Push(pc >> 8);Push(pc & 0xFF);pc = eac;
-
-"rts" 		6 	60 																
-		pc = Pop();pc = pc | (((WORD16)Pop()) << 8);pc++
-
-"rti" 		6 	40 																
-		explodeFlagRegister(Pop());pc = Pop();pc = pc | (((WORD16)Pop()) << 8)
-
-"bbr% @O"	6	(ZR:0F)
-		@EAC;Branch((Read(eac) & (1 << %)) == 0)
-
-"bbs% @O" 	6	(ZR:8F)
-		@EAC;Branch((Read(eac) & (1 << %)) != 0)
-
 // *******************************************************************************************
-//									Set/Reset Flag Commands
+//
+//										Push and Pull Stack
+//	
 // *******************************************************************************************
-
-"clc"		2 	18 																
-		carryFlag = 0
-
-"cld"		2 	D8 																
-		decimalFlag = 0
-
-"cli"		2 	58 																
-		interruptDisableFlag = 0
-
-"clv"		2 	B8																
-		overflowFlag = 0
-
-"sec"		2 	38 																
-		carryFlag = 1	
-
-"sei"		2 	78 																
-		interruptDisableFlag = 1
-
-"sed"		2 	F8 																
-		decimalFlag = 1
-
-// *******************************************************************************************
-//										Stack operations
-// *******************************************************************************************
-
-"pha"		3 	48																
-		Push(a)
-
-"php"		3 	08 																
-		Push(constructFlagRegister())
-
-"pla"		4 	68 																
-		a = sValue = zValue = Pop()
-
-"plp"		4 	28 																
-		explodeFlagRegister(Pop())
-
-"phx"		3 	DA
-		Push(x)
-"plx"		4 	FA 																
-		x = sValue = zValue = Pop()
-"phy"		3 	5A
-		Push(y)
-"ply"		4 	7A 																
-		y = sValue = zValue = Pop()
 
 :static void Push(BYTE8 v) {
-:	Write(0x100+s,v);
+:	Write(stackBaseAddress+s,v);
 :	s = (s - 1) & 0xFF;	
 :}
 
 :static BYTE8 Pop(void) {
 :	s = (s + 1) & 0xFF;
-:	return Read(0x100+s);	
+:	return Read(stackBaseAddress+s);	
 :}
-
-// *******************************************************************************************
-//											Miscellany
-// *******************************************************************************************
-
-"brk"		7 	00 																
-		brkCode()
-
-"nop"		2 	EA 																
-		{}
-
-"tax"		2 	AA																
-		sValue = zValue = x = a
-
-"tay"		2 	A8 																
-		sValue = zValue = y = a
-
-"tsx" 		2 	BA 																
-		sValue = zValue = x = s
-
-"txa"		2 	8A 																
-		sValue = zValue = a = x
-
-"txs"		2 	9A 																
-		s = x
-
-"tya"		2 	98 																
-		sValue = zValue = a = y
-
-// *******************************************************************************************
-//
-//											System
-//		
-// *******************************************************************************************
-
-"dbg @O"	6 	(A:FC) 															
-		@EAC;showDebug(eac);
-
 		
 // *******************************************************************************************
 //
@@ -438,7 +603,10 @@
 
 :static void resetProcessor(void) {
 :	interruptDisableFlag = 1;						// IRQ Disabled
+:	extendedStackDisableFlag = 1; 					// Extended stack disabled.
 :	carryFlag &= 1;overflowFlag &= 1;				// Validate other flags
 :	breakFlag &= 1;decimalFlag &= 1;
-:	pc = ReadWord(0xFFFC);						// Go to start vector.
+:	pc = ReadWord(0xFFFC);							// Go to start vector.
+:	stackBaseAddress = 0x100; 						// Default stack
+:	basePage = 0x000; 								// Default base page
 :}

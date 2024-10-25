@@ -25,9 +25,9 @@ modes["ay"] = { "eac":"FetchWord();eac = (temp16+y) & 0xFFFF;", "cycles":0, "des
 #
 #		Zero Page modes
 #
-modes["z"] = { "eac":"eac = Fetch();", "cycles":-1, "desc":"@1" }
-modes["zx"] = { "eac":"eac = (Fetch()+x) & 0xFF;", "cycles":0, "desc":"@1,X" }
-modes["zy"] = { "eac":"eac = (Fetch()+y) & 0xFF;", "cycles":0, "desc":"@1,Y" }
+modes["bp"] = { "eac":"eac = Fetch();", "cycles":-1, "desc":"@1" }
+modes["bx"] = { "eac":"eac = (Fetch()+basePage);", "cycles":0, "desc":"@1,X" }
+modes["by"] = { "eac":"eac = (Fetch()+basePage);", "cycles":0, "desc":"@1,Y" }
 #
 #		Immediate mode.
 #
@@ -38,7 +38,8 @@ modes["i"] = { "eac":"", "cycles":-2, "desc":"#@1" }
 modes["id"] = { "eac":"FetchWord();eac = ReadWord(temp16);", "cycles":2, "desc":"(@2)" }
 modes["ix"] = { "eac":"temp8 = (Fetch()+x) & 0xFF;eac = ReadWord(temp8);", "cycles":3, "desc":"(@1,X)" }
 modes["iy"] = { "eac":"temp8 = Fetch();eac = (ReadWord(temp8)+y) & 0xFFFF;", "cycles":2, "desc":"(@1),Y" }
-modes["iz"] = { "eac":"temp8 = Fetch();eac = ReadWord(temp8);", "cycles":2, "desc":"(@1)" }
+modes["iz"] = { "eac":"temp8 = Fetch();eac = (ReadWord(temp8)+z) & 0xFFFF;", "cycles":2, "desc":"(@1),Z" }
+modes["sp"] = { "eac":"temp8 = Fetch();eac = (ReadWord(temp8+stackBaseAddress+s)+y) & 0xFFFF;", "cycles":2, "desc":"(@1,SP),Y" }
 modes["iax"] = { "eac":"FetchWord();temp16 = (temp16+x) & 0xFFFF;eac = ReadWord(temp16)","cycles":2,"desc":"(@2,x)"}
 #
 #		BBS/BBR mode.
@@ -84,6 +85,7 @@ src = [x.strip() for x in " ".join(src).split("~") if x.strip() != ""]
 #		For each line.
 #
 for l in src:
+	print(l)
 	#
 	#		Decompose into Mnemonic cycles opcodes c-code
 	#
@@ -139,9 +141,14 @@ open("__4502mnemonics.h","w").write("static const char *_mnemonics[] = { "+",".j
 #		Write out instruction code.
 #
 handle = open("__4502opcodes.h","w")
+unused = []
 for i in range(0,256):
 	if codeList[i] is not None:
 		handle.write("case 0x{0:02x}: /* ${0:02x} {1} */\n".format(i,mnemonics[i]))
 		handle.write("\t{0};break;\n".format(codeList[i]).replace(";;",";"))
+	else:
+		if i < 256:
+			unused.append(i)
 
 print("Successfully generated 45GS02 opcodes.")
+print(" ".join(["{0:02x}".format(n) for n in unused]))

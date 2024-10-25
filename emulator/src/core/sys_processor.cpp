@@ -18,7 +18,9 @@
 #include "hardware.h"
 
 // *******************************************************************************************************************************
+//
 //														   Timing
+//
 // *******************************************************************************************************************************
 
 #define CYCLE_RATE 		(16*1024*1024)												// Cycles per second (16Mhz)
@@ -26,14 +28,17 @@
 #define CYCLES_PER_FRAME (CYCLE_RATE / FRAME_RATE)									// Cycles per frame (20,000)
 
 // *******************************************************************************************************************************
+//
 //														CPU / Memory
+//
 // *******************************************************************************************************************************
 
 static BYTE8 a,x,y,z,s;																// 4502 A,X,Y,Z and Stack registers
 static BYTE8 carryFlag,interruptDisableFlag,breakFlag,								// Values representing status reg
-			 decimalFlag,overflowFlag,sValue,zValue;
-static WORD16 pc;																	// Program Counter.
+			 decimalFlag,overflowFlag,sValue,zValue,extendedStackDisableFlag;
+static WORD16 pc,stackBaseAddress,basePage;											// Program Counter, stack base.
 static BYTE8 ramMemory[MEMSIZE];													// Memory at $0000 upwards
+static BYTE8 debugBreak = 0xB8;  													// Default debug break (CLV)
 static int argumentCount;
 static char **argumentList;
 static LONG32 cycles;																// Cycle Count.
@@ -41,7 +46,9 @@ static BYTE8 inFastMode; 															// Fast mode
 static WORD16 lowVideoAddress,highVideoAddress;  									// Write to video range.
 
 // *******************************************************************************************************************************
+//
 //											 Memory and I/O read and write macros.
+//
 // *******************************************************************************************************************************
 
 #define Read(a) 	_Read(a)														// Basic Read
@@ -57,7 +64,9 @@ static inline void _Write(WORD16 address,BYTE8 data);								// used in support 
 #include "4502/__4502support.h"
 
 // *******************************************************************************************************************************
+//
 //											   Read and Write Inline Functions
+//
 // *******************************************************************************************************************************
 
 BYTE8 *CPUAccessMemory(void) {
@@ -72,8 +81,13 @@ static inline void _Write(WORD16 address,BYTE8 data) {
 	ramMemory[address] = data;	
 }
 
+static void CPUMapMemory(void) {
+}
+
 // *******************************************************************************************************************************
+//
 //													Remember Arguments
+//
 // *******************************************************************************************************************************
 
 void CPUSaveArguments(int argc,char *argv[]) {
@@ -82,7 +96,9 @@ void CPUSaveArguments(int argc,char *argv[]) {
 }
 
 // *******************************************************************************************************************************
+//
 //														Reset the CPU
+//
 // *******************************************************************************************************************************
 
 
@@ -112,7 +128,9 @@ void CPUReset(void) {
 }
 
 // *******************************************************************************************************************************
+//
 //													  Invoke IRQ
+//
 // *******************************************************************************************************************************
 
 void CPUInterruptMaskable(void) {
@@ -120,7 +138,9 @@ void CPUInterruptMaskable(void) {
 }
 
 // *******************************************************************************************************************************
+//
 //												Execute a single instruction
+//
 // *******************************************************************************************************************************
 
 BYTE8 CPUExecuteInstruction(void) {
@@ -141,7 +161,9 @@ BYTE8 CPUExecuteInstruction(void) {
 }
 
 // *******************************************************************************************************************************
+//
 //												Read/Write Memory
+//
 // *******************************************************************************************************************************
 
 BYTE8 CPUReadMemory(WORD16 address) {
@@ -156,7 +178,9 @@ void CPUWriteMemory(WORD16 address,BYTE8 data) {
 #include "gfx.h"
 
 // *******************************************************************************************************************************
+//
 //		Execute chunk of code, to either of two break points or frame-out, return non-zero frame rate on frame, breakpoint 0
+//
 // *******************************************************************************************************************************
 
 BYTE8 CPUExecute(WORD16 breakPoint1,WORD16 breakPoint2) { 
@@ -165,17 +189,19 @@ BYTE8 CPUExecute(WORD16 breakPoint1,WORD16 breakPoint2) {
 		BYTE8 r = CPUExecuteInstruction();											// Execute an instruction
 		if (r != 0) return r; 														// Frame out.
 		next = CPUReadMemory(pc);
-	} while (pc != breakPoint1 && pc != breakPoint2 && next != 0xDB);				// Stop on breakpoint or $03 break
+	} while (pc != breakPoint1 && pc != breakPoint2 && next != debugBreak);			// Stop on breakpoint or code break.
 	return 0; 
 }
 
 // *******************************************************************************************************************************
+//
 //									Return address of breakpoint for step-over, or 0 if N/A
+//
 // *******************************************************************************************************************************
 
 WORD16 CPUGetStepOverBreakpoint(void) {
 	BYTE8 opcode = CPUReadMemory(pc);												// Current opcode.
-	if (opcode == 0x20) return (pc+3) & 0xFFFF;										// Step over JSR.
+	if (opcode == 0x20 || opcode == 0x22 || opcode == 0x23) return (pc+3) & 0xFFFF;	// Step over JSR.
 	return 0;																		// Do a normal single step
 }
 
@@ -192,17 +218,18 @@ void CPUExit(void) {
 
 
 // *******************************************************************************************************************************
+//
 //											Retrieve a snapshot of the processor
+//
 // *******************************************************************************************************************************
 
 static CPUSTATUS st;																	// Status area
 
 CPUSTATUS *CPUGetStatus(void) {
-	st.a = a;st.x = x;st.y = y;st.z = z;st.sp = s;st.pc = pc;
+	st.a = a;st.x = x;st.y = y;st.z = z;st.sp = s+stackBaseAddress;st.pc = pc;
 	st.carry = carryFlag;st.interruptDisable = interruptDisableFlag;st.zero = (zValue == 0);
 	st.decimal = decimalFlag;st.brk = breakFlag;st.overflow = overflowFlag;
 	st.sign = (sValue & 0x80) != 0;st.status = constructFlagRegister();
-	st.cycles = cycles;
+	st.cycles = cycles;st.baseAddress = basePage;
 	return &st;
 }
-
