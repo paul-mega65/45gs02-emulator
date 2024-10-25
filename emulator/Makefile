@@ -16,14 +16,19 @@ APPNAME = m4502
 SOURCES = 	src/core/sys_processor.o  src/framework/main.o src/framework/gfx.o src/framework/debugger.o \
 			src/core/sys_debugger.o src/core/hardware.o \
   			
+TESTDIR = $(ROOTDIR)/test/
+
 CC = g++
 
 .PHONY: all clean emulator prebuild release run
 
 all: emulator
 
-run: emulator
-	../bin/$(APPNAME)
+testprogram:
+	make -C $(TESTDIR) 
+
+run: emulator testprogram
+	../bin/$(APPNAME) $(TESTDIR)test.prg pc@2014
 	
 emulator: prebuild $(APPNAME)
 	cp $(APPNAME) ../bin

@@ -106,25 +106,42 @@ void CPUReset(void) {
 	HWReset();																		// Reset Hardware
 	for (int i = 1;i < argumentCount;i++) {
 		char szBuffer[128];
-		int loadAddress;
+		int loadAddress,runAddress;
 		strcpy(szBuffer,argumentList[i]);											// Get buffer
 		
 		char *p = strchr(szBuffer,'@');
-		if (p == NULL) exit(fprintf(stderr,"Bad argument %s\n",argumentList[i]));
-		*p++ = '\0';
-		if (*p == '$') p++; 
-		if (sscanf(p,"%x",&loadAddress) != 1) exit(fprintf(stderr,"Bad argument %s\n",argumentList[i]));
-		printf("Loading '%s' to $%06x ..",szBuffer,loadAddress);
-		FILE *f = fopen(szBuffer,"rb");
-		if (f == NULL) exit(fprintf(stderr,"No file %s\n",argumentList[i]));
-		while (!feof(f) && loadAddress < MEMSIZE) {
-			ramMemory[loadAddress++] = fgetc(f);
+		if (p != NULL) {
+			*p++ = '\0';
+			if (strcmp(szBuffer,"pc") == 0) {
+				sscanf(p,"%x",&runAddress);
+				Write(0xFFFC,runAddress & 0xFF);
+				Write(0xFFFD,runAddress >> 8);
+			} else {
+				if (*p == '$') p++; 
+				if (sscanf(p,"%x",&loadAddress) != 1) exit(fprintf(stderr,"Bad argument %s\n",argumentList[i]));
+				printf("Loading '%s' to $%06x ..",szBuffer,loadAddress);
+				FILE *f = fopen(szBuffer,"rb");
+				if (f == NULL) exit(fprintf(stderr,"No file %s\n",argumentList[i]));
+				while (!feof(f) && loadAddress < MEMSIZE) {
+					ramMemory[loadAddress++] = fgetc(f);
+				}
+				fclose(f);
+			}
+		} else {
+			printf("Loading '%s'",szBuffer);
+			FILE *f = fopen(szBuffer,"rb");
+			if (f == NULL) exit(fprintf(stderr,"No file %s\n",argumentList[i]));
+			loadAddress = fgetc(f);
+			loadAddress = loadAddress + (fgetc(f) << 8);
+			printf("Loading to $%x\n",loadAddress);
+			while (!feof(f) && loadAddress < MEMSIZE) {
+				ramMemory[loadAddress++] = fgetc(f);
+			}
+			fclose(f);
 		}
-		fclose(f);
-		printf("Okay\n");		
 	}
-	inFastMode = 0;																	// Fast mode flag reset
 	resetProcessor();																// Reset CPU
+	printf("@%x\n",CPUGetStatus()->pc);
 }
 
 // *******************************************************************************************************************************

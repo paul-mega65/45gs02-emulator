@@ -43,7 +43,7 @@ int HWKeymap(int k,int r) {
 	int ascii = GFXToASCII(k,-1);
 	if (ascii != 0) {
 		CPUAccessMemory()[0xC000] = 0x80|ascii;
-		printf("%c %d %d\n",GFXToASCII(k,1),GFXToASCII(k,1),k);
+		//printf("%c %d %d\n",GFXToASCII(k,1),GFXToASCII(k,1),k);
 	}
 	return k;
 }
